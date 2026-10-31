@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Daily Report Online</title>
+    <link rel="icon" href="favicon.png" type="image/png">
+    <link rel="icon" href="favicon.jpg" type="image/jpeg">
+    
+    <!-- TAG TAMBAHAN UNTUK PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#f2f2f7">
+    <link rel="apple-touch-icon" href="favicon.png">
+    <!-- AKHIR TAG PWA -->
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    
+    <style>
+        :root {
+            --ios-bg: #f2f2f7; --ios-card: #ffffff; --ios-blue: #007aff;
+            --ios-text: #1c1c1e; --ios-gray: #8e8e93;
+        }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+            background-color: #d1d1d6; /* Warna bg luar jika di buka di PC/Desktop */
+            color: var(--ios-text); margin: 0; padding: 0;
+            display: flex; justify-content: center;
+        }
+        
+        /* WRAPPER AGAR TAMPILAN RESPONSIVE SEPERTI APLIKASI MOBILE */
+        .app-wrapper {
+            width: 100%;
+            max-width: 600px; /* Batas maksimal lebar untuk tampilan Mobile diubah ke 600px */
+            min-height: 791px; /* Minimal tinggi diset ke 791px sesuai permintaan */
+            background-color: var(--ios-bg);
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.08);
+            padding-bottom: 80px; /* Spacer untuk bottom navigation */
+        }
+
+        .hidden { display: none !important; }
+        
+        h4 { font-weight: 700; font-size: 24px; margin-bottom: 5px; margin-top: 0; }
+        .app-header { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); padding: 20px; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #e5e5ea; }
+        
+        .ios-card { background: var(--ios-card); border-radius: 16px; padding: 20px; margin: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
+        .input-group { margin-bottom: 15px; width: 100%; box-sizing: border-box; }
+        .input-group label { display: block; font-size: 12px; font-weight: 600; color: var(--ios-gray); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;}
+        
+        /* Penyesuaian agar tidak terpotong di HP */
+        .ios-input { width: 100%; background: var(--ios-bg); border: 2px solid transparent; border-radius: 12px; padding: 12px 14px; font-size: 15px; color: var(--ios-text); outline: none; transition: 0.3s; box-sizing: border-box; }
+        .ios-input:focus { border-color: var(--ios-blue); background: #fff; }
+        .ios-input:read-only, .ios-input:disabled { opacity: 0.7; background: #e5e5ea; cursor: not-allowed; }
+        
+        /* RESPONSIVE FLEX UNTUK INPUT GROUP DI HP KECIL (DIPERBAIKI: TETAP 2 KOTAK 1 BARIS) */
+        .flex-row { display: flex; flex-direction: row; gap: 12px; }
+        @media (max-width: 480px) {
+            .flex-row { gap: 8px; } /* Sedikit dirapatkan gap-nya agar muat di HP kecil tanpa numpuk ke bawah */
+        }
+
+        .chip-container { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+        .ios-chip { background: #e5e5ea; border: none; padding: 10px 18px; border-radius: 20px; font-size: 14px; font-weight: 600; color: var(--ios-text); cursor: pointer; transition: 0.2s; }
+        .ios-chip.active { background: var(--ios-blue); color: white; transform: scale(1.05); }
+
+        .channel-block { background: #fafafa; border-radius: 12px; padding: 15px; margin-bottom: 15px; border-left: 4px solid var(--ios-blue); animation: fadeIn 0.3s ease-in-out; box-sizing: border-box;}
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Penyesuaian padding teks tombol agar aman sejajar 2 kotak di HP */
+        .ios-btn { background: var(--ios-blue); color: white; border: none; width: 100%; padding: 14px 10px; border-radius: 14px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s; box-sizing: border-box; text-align: center; }
+        .ios-btn:active { transform: scale(0.98); opacity: 0.9; }
+        .ios-btn-warning { background: #ff9500; }
+        .ios-btn-success { background: #34c759; }
+
+        .tab-bar { position: fixed; bottom: 0; width: 100%; max-width: 600px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px); border-top: 1px solid #e5e5ea; display: flex; justify-content: space-around; padding: 12px 0 25px 0; z-index: 1000; }
+        .tab-item { text-align: center; color: var(--ios-gray); font-size: 11px; font-weight: 500; cursor: pointer; transition: 0.2s; width: 25%; }
+        .tab-item i { font-size: 22px; display: block; margin-bottom: 3px; }
+        .tab-item.active { color: var(--ios-blue); }
+
+        .history-item { padding: 15px; border-bottom: 1px solid #e5e5ea; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .history-item:last-child { border-bottom: none; }
+        .h-date { font-weight: 600; font-size: 16px; }
+        .h-sub { font-size: 13px; color: var(--ios-gray); margin-top: 4px;}
+        
+        .info-detail b { color: #333; }
+        .info-detail { text-align: left; font-size: 14px; line-height: 1.6; color: #555;}
+
+        .refresh-btn { background: none; border: none; cursor: pointer; padding: 5px; outline: none; }
+        .refresh-btn svg { transition: transform 0.2s; }
+        .refresh-btn:active svg { transform: scale(0.9); }
+        .spin { animation: spinAnim 0.6s ease-in-out; }
+        @keyframes spinAnim { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .swal-custom-input { width: 100%; box-sizing: border-box; background: var(--ios-bg); border: 2px solid transparent; border-radius: 12px; padding: 14px 16px; font-size: 15px; margin-bottom: 15px; color: var(--ios-text); outline: none; transition: 0.3s; }
+        .swal-custom-input:focus { border-color: var(--ios-blue); background: #fff; }
+        .swal-label { text-align: left; font-size: 13px; font-weight: 600; color: var(--ios-gray); margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Loader Session */
+        #sessionLoading { text-align: center; margin-top: 150px; }
+        .spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 40px; height: 40px; border-radius: 50%; border-left-color: var(--ios-blue); animation: spinAnim 1s linear infinite; margin: 0 auto 15px auto; }
+        
+        /* =========================================================
+           TAMBAHAN OTOMATIS RESPONSIVE: TABLET & LAPTOP / PC (FULL LAYAR EDGE-TO-EDGE)
+           ========================================================= */
+        @media (min-width: 768px) {
+            body { 
+                align-items: flex-start; 
+                padding: 0; /* Hapus padding luar agar penuh ke sisi layar */
+                box-sizing: border-box;
+                background-color: var(--ios-bg);
+            }
+            .app-wrapper {
+                max-width: 100%; /* FULL LAYAR 100% Lebar */
+                width: 100%;
+                margin: 0; /* Tidak ada sisa margin di kiri/kanan */
+                border-radius: 0; /* Hilangkan lengkungan border luar */
+                box-shadow: none;
+                padding-bottom: 0;
+                overflow-x: hidden;
+                min-height: 100vh;
+            }
+            
+            #appSection {
+                display: grid;
+                grid-template-columns: 250px 1fr; /* 250px untuk Sidebar, 1fr untuk konten full sisanya */
+                grid-template-rows: auto 1fr auto;
+                min-height: 100vh;
+            }
+            
+            .app-header {
+                grid-column: 2 / 3;
+                grid-row: 1 / 2;
+                border-radius: 0;
+                padding: 25px 40px; /* Padding dilebarkan agar lapang */
+            }
+            
+            .tab-content {
+                grid-column: 2 / 3;
+                grid-row: 2 / 3;
+                padding: 20px 40px; /* Jarak kiri kanan agar isi konten rapi */
+            }
+            
+            #appSection > div:nth-last-child(2) {
+                grid-column: 2 / 3;
+                grid-row: 3 / 4;
+                padding-bottom: 20px;
+                margin: 20px 0 0 0 !important;
+            }
+            
+            .tab-bar {
+                position: fixed; /* Fix sidebar di kiri layar */
+                top: 0;
+                left: 0;
+                width: 250px;
+                height: 100vh;
+                flex-direction: column;
+                justify-content: flex-start;
+                padding-top: 40px;
+                background: rgba(255,255,255,1); /* Warna Solid */
+                border-top: none;
+                border-right: 1px solid #e5e5ea;
+                border-radius: 0;
+                gap: 10px;
+                max-width: none;
+                z-index: 1000;
+            }
+            
+            .tab-item {
+                width: 90%;
+                margin: 0 auto;
+                border-radius: 12px;
+                text-align: left;
+                padding: 16px 20px;
+                font-size: 15px;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                transition: all 0.3s ease;
+                box-sizing: border-box; /* FIX AGAR KOTAK BIRU TIDAK OFFSIDE */
+            }
+            .tab-item:hover { background: rgba(0, 122, 255, 0.08); }
+            .tab-item.active { background: rgba(0, 122, 255, 0.12); color: var(--ios-blue); }
+            .tab-item i { margin-bottom: 0; font-size: 22px; width: 28px; text-align: center; }
+
+            .ios-card { padding: 30px; }
+            
+            /* Form Grid Dinamis (Otomatis bagi kolom jika layar besar) */
+            .flex-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+            #multiChannelForms { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
+            .channel-block { margin-bottom: 0; box-sizing: border-box; }
+            
+            .history-item { padding: 20px 25px; transition: 0.2s ease; }
+            .history-item:hover { background: #f2f2f7; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-wrapper">
+
+    <!-- SCREEN: CEK SESSION LOADING -->
+    <div id="sessionLoading" class="hidden">
+        <div class="spinner"></div>
+        <h4 style="font-size: 18px; color: var(--ios-gray); margin-top: 20px;">Memverifikasi Sesi Keamanan...</h4>
+    </div>
+
+    <!-- SECTION: LOGIN -->
+    <div id="loginSection" class="ios-card" style="max-width: 350px; margin: 100px auto 15px auto;">
+        <h4 style="text-align: center; margin-bottom: 30px;">Login App</h4>
+        <div class="input-group">
+            <input type="text" id="loginUser" class="ios-input" placeholder="Username" onkeydown="if(event.key === 'Enter') login()">
+        </div>
+        <div class="input-group">
+            <input type="password" id="loginPass" class="ios-input" placeholder="Password" onkeydown="if(event.key === 'Enter') login()">
+        </div>
+        <button onclick="login()" id="btnLogin" class="ios-btn mt-3">Masuk</button>
+    </div>
+
+    <!-- PINTASAN INSTAL PWA DI BAWAH LOGIN -->
+    <div id="pwaInstallContainer" class="ios-card hidden" style="max-width: 350px; margin: 0 auto 50px auto; text-align: center;">
+        <div style="font-size: 13px; font-weight: 600; color: var(--ios-gray); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Akses Lebih Cepat & Praktis</div>
+        <button onclick="installPWA()" id="btnInstallPwa" class="ios-btn ios-btn-success" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <i class="bi bi-download" style="font-size: 20px;"></i>
+            <span>Instal Aplikasi</span>
+        </button>
+    </div>
+
+    <!-- SECTION: MAIN APP -->
+    <div id="appSection" class="hidden">
+        
+        <div class="app-header">
+            <div style="display:flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-size: 12px; font-weight: 800; color: var(--ios-gray); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Daily Report Online</div>
+                    <h4 style="font-size: 20px;">Halo, <span id="staffName" style="color: var(--ios-blue);"></span> 👋</h4>
+                </div>
+                <button onclick="refreshData()" class="refresh-btn" id="btnRefresh" title="Refresh Data">
+                    <svg id="refreshIcon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--ios-blue)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                    </svg>
+                </button>
+            </div>
+            <div style="font-size: 13px; color: var(--ios-gray); margin-top: 8px;">
+                Pajak: <b id="infoPajak">0</b>% | Target: Rp <b id="infoTarget">0</b>
+            </div>
+        </div>
+
+        <!-- 1. TAB: FORM INPUT -->
+        <div id="tabForm" class="tab-content">
+            <div class="ios-card">
+                <form id="salesForm" onsubmit="submitData(event)">
+                    
+                    <div class="input-group">
+                        <label>Tanggal Input</label>
+                        <input type="date" id="inputDate" class="ios-input" onchange="checkDate()" required>
+                    </div>
+
+                    <div class="flex-row">
+                        <div class="input-group" style="flex: 1; min-width: 0;">
+                            <label>Internal View <span style="color:red">*</span></label>
+                            <input type="text" inputmode="numeric" id="internalView" class="ios-input" oninput="formatRibuan(this); calcTotalView()" required>
+                        </div>
+                        <div class="input-group" style="flex: 1; min-width: 0;">
+                            <label>Customer View <span style="color:red">*</span></label>
+                            <input type="text" inputmode="numeric" id="customerView" class="ios-input" oninput="formatRibuan(this); calcTotalView()" required>
+                        </div>
+                    </div>
+                    
+                    <div class="flex-row">
+                        <div class="input-group" style="flex: 1; min-width: 0;">
+                            <label>Total View (Auto)</label>
+                            <input type="text" id="totalView" class="ios-input" readonly>
+                        </div>
+                        <div class="input-group" style="flex: 1; min-width: 0;">
+                            <label>Total Chats <span style="color:red">*</span></label>
+                            <input type="text" inputmode="numeric" id="totalChats" class="ios-input" oninput="formatRibuan(this)" required>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Sales Input (Otomatis)</label>
+                        <input type="text" id="salesInput" class="ios-input" readonly>
+                    </div>
+
+                    <hr style="border: 0; border-top: 1px solid #e5e5ea; margin: 25px 0;">
+
+                    <label style="font-size: 13px; font-weight: 600; color: var(--ios-gray); margin-bottom: 10px; display: block;">PILIH CHANNEL (BISA MULTIPLE)</label>
+                    <div class="chip-container" id="channelChips">
+                        <button type="button" class="ios-chip" onclick="toggleChannel('TAB')">TAB</button>
+                        <button type="button" class="ios-chip" onclick="toggleChannel('Rupa-Rupa (ODI)')">Rupa-Rupa (ODI)</button>
+                        <button type="button" class="ios-chip" onclick="toggleChannel('Shopee (ODIS)')">Shopee (ODIS)</button>
+                        <button type="button" class="ios-chip" onclick="toggleChannel('Storemode (ODIR)')">Storemode (ODIR)</button>
+                        <button type="button" class="ios-chip" onclick="toggleChannel('Tokopedia (ODIT)')">Tokopedia (ODIT)</button>
+                        <button type="button" class="ios-chip" onclick="toggleChannel('TikTok (ODIK)')">TikTok (ODIK)</button>
+                        <button type="button" class="ios-chip" onclick="toggleChannel('Grab Mart (GM)')">Grab Mart (GM)</button>
+                        <button type="button" class="ios-chip" onclick="toggleChannel('Project')">Project</button>
+                    </div>
+
+                    <div id="multiChannelForms"></div>
+
+                    <!-- TOMBOL ACTION FORM -->
+                    <div class="flex-row" style="margin-top: 25px;">
+                        <button type="button" id="btnResetData" onclick="handleReset()" class="ios-btn" style="background: #ff3b30; flex: 1;">Kosongkan Form</button>
+                        <button type="submit" id="btnSubmit" class="ios-btn" style="flex: 1;">Simpan & Kalkulasi</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 2. TAB: HISTORY -->
+        <div id="tabHistory" class="tab-content hidden">
+            <div class="ios-card" style="padding: 0; overflow: hidden;">
+                <div style="padding: 20px; background: #f9f9f9; border-bottom: 1px solid #e5e5ea;">
+                    <h4 style="margin: 0; font-size: 18px;">Riwayat Input Seluruh Tim</h4>
+                    <span style="font-size: 12px; color: var(--ios-gray);">Ketuk untuk melihat detail, edit, atau hapus data.</span>
+                </div>
+                <!-- BAGIAN FILTER BULAN -->
+                <div style="padding: 15px; background: #fff; border-bottom: 1px solid #e5e5ea; display: flex; justify-content: space-between; align-items: center;">
+                    <label style="font-size: 14px; font-weight: 600; color: var(--ios-gray);">Filter Bulan:</label>
+                    <input type="month" id="monthFilter" class="ios-input" style="width: auto; padding: 8px 12px; font-size: 14px;" onchange="loadHistory()">
+                </div>
+                <div id="historyList"></div>
+            </div>
+        </div>
+
+        <!-- 3. TAB: ADMIN PANEL -->
+        <div id="tabAdmin" class="tab-content hidden">
+            
+            <!-- SECTION SETTINGS -->
+            <div class="ios-card">
+                <h4 style="color: #ff9500; margin-bottom: 15px;"><i class="bi bi-gear-fill"></i> Pengaturan Aplikasi</h4>
+                <div class="input-group">
+                    <label>Setting Pajak (%)</label>
+                    <input type="number" id="setPajak" class="ios-input">
+                </div>
+                <div class="input-group">
+                    <label>Setting Target Monthly (Rp)</label>
+                    <input type="text" inputmode="numeric" id="setTarget" class="ios-input" oninput="formatRibuan(this)">
+                </div>
+                <button onclick="saveAdmin()" id="btnSaveAdmin" class="ios-btn ios-btn-warning">Simpan Pengaturan</button>
+            </div>
+
+            <!-- SECTION KELOLA STAFF -->
+            <div class="ios-card" style="margin-top: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h4 style="margin: 0; font-size: 18px; color: var(--ios-blue);"><i class="bi bi-people-fill"></i> Kelola Pengguna</h4>
+                    <button onclick="showAddStaffModal()" class="ios-btn" style="width: auto; padding: 8px 14px; font-size: 13px;">+ User Baru</button>
+                </div>
+                <div id="staffListContainer"></div>
+            </div>
+
+        </div>
+
+        <!-- FOOTER / WATERMARK -->
+        <div style="text-align: center; margin: 35px 0 35px 0; font-size: 12px; color: var(--ios-gray); line-height: 1.5;">
+            <b>Creator & Dev : Alfian Ananda (162331)</b><br>
+            &copy; Copyright 2026
+        </div>
+
+        <!-- BOTTOM TAB BAR (Berubah menjadi Sidebar di Layar Besar Otomatis) -->
+        <div class="tab-bar">
+            <div class="tab-item active" id="navForm" onclick="switchTab('Form')"><i class="bi bi-pencil-square"></i>Form</div>
+            <div class="tab-item" id="navHistory" onclick="switchTab('History')"><i class="bi bi-clock-history"></i>History</div>
+            <div class="tab-item hidden" id="navAdmin" onclick="switchTab('Admin')"><i class="bi bi-gear-fill"></i>Admin</div>
+            <div class="tab-item" onclick="logout(true)"><i class="bi bi-box-arrow-right text-danger"></i><span style="color:#ff3b30">Logout</span></div>
+        </div>
+
+    </div>
+
+</div> <!-- PENUTUP APP WRAPPER -->
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // URL DEPLOY GOOGLE APPS SCRIPT
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx5eJ6wXBpu-L0lYH0TuG5Noc_ethgq5KrexGkOBA3GbO8QEcoIswrxsnd2VLPPWxzdmA/exec'; 
+        
+        let currentPajak = 0;
+        let isEditMode = false;
+        
+        // FUNGSI HELPER UNTUK MENDAPATKAN TANGGAL FORMAT YYYY-MM-DD BERDASARKAN WAKTU LOKAL
+        function getLocalDateString(d = new Date()) {
+            let year = d.getFullYear();
+            let month = String(d.getMonth() + 1).padStart(2, '0');
+            let day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        let todayStr = getLocalDateString();
+        let activeChannels = []; 
+        let deferredPrompt = null;
+
+        // --- MANAJEMEN DRAF (AUTO-SAVE / PERSISTENCE REFRESH) ---
+        function saveDraft() {
+            if (!localStorage.getItem("loggedInUser")) return;
+            
+            let activeCh = [...activeChannels];
+            let channelData = {};
+            activeCh.forEach(ch => {
+                let safeId = ch.replace(/[^a-zA-Z]/g, '');
+                let trxEl = document.getElementById(`trx_${safeId}`);
+                let salesEl = document.getElementById(`sales_${safeId}`);
+                let netEl = document.getElementById(`net_${safeId}`);
+                if (trxEl) {
+                    channelData[ch] = {
+                        trx: trxEl.value,
+                        sales: salesEl.value,
+                        net: netEl.value
+                    };
+                }
+            });
+
+            let draft = {
+                date: document.getElementById('inputDate').value,
+                isEditMode: isEditMode,
+                disabledDate: document.getElementById('inputDate').disabled,
+                internalView: document.getElementById('internalView').value,
+                customerView: document.getElementById('customerView').value,
+                totalView: document.getElementById('totalView').value,
+                totalChats: document.getElementById('totalChats').value,
+                activeChannels: activeCh,
+                channelData: channelData
+            };
+
+            localStorage.setItem("formDraft", JSON.stringify(draft));
+        }
+
+        function clearDraft() {
+            localStorage.removeItem("formDraft");
+        }
+
+        function restoreDraft() {
+            let draftData = localStorage.getItem("formDraft");
+            if (!draftData) return false;
+
+            try {
+                let draft = JSON.parse(draftData);
+                if (!draft) return false;
+
+                isEditMode = !!draft.isEditMode;
+
+                if (draft.date) {
+                    document.getElementById('inputDate').value = draft.date;
+                }
+                if (draft.disabledDate) {
+                    document.getElementById('inputDate').disabled = true;
+                }
+
+                document.getElementById('internalView').value = draft.internalView || "";
+                document.getElementById('customerView').value = draft.customerView || "";
+                document.getElementById('totalView').value = draft.totalView || "";
+                document.getElementById('totalChats').value = draft.totalChats || "";
+
+                if (draft.activeChannels && Array.isArray(draft.activeChannels)) {
+                    activeChannels = [];
+                    document.querySelectorAll('.ios-chip').forEach(c => c.classList.remove('active'));
+                    document.getElementById('multiChannelForms').innerHTML = "";
+
+                    draft.activeChannels.forEach(ch => {
+                        toggleChannel(ch, true);
+                        let safeId = ch.replace(/[^a-zA-Z]/g, '');
+                        if (draft.channelData && draft.channelData[ch]) {
+                            let cData = draft.channelData[ch];
+                            let trxEl = document.getElementById(`trx_${safeId}`);
+                            let salesEl = document.getElementById(`sales_${safeId}`);
+                            let netEl = document.getElementById(`net_${safeId}`);
+                            if (trxEl) trxEl.value = cData.trx || "";
+                            if (salesEl) salesEl.value = cData.sales || "";
+                            if (netEl) netEl.value = cData.net || "";
+                        }
+                    });
+                }
+
+                let btnReset = document.getElementById('btnResetData');
+                if (isEditMode) {
+                    if (btnReset) {
+                        btnReset.innerText = "Batal Edit";
+                        btnReset.style.background = "#ff3b30";
+                    }
+                    document.getElementById('btnSubmit').innerText = "Simpan Perubahan";
+                } else {
+                    if (btnReset) {
+                        btnReset.innerText = "Kosongkan Form";
+                        btnReset.style.background = "#ff3b30";
+                    }
+                    document.getElementById('btnSubmit').innerText = "Simpan & Kalkulasi";
+                }
+
+                return true;
+            } catch (e) {
+                console.error("Gagal memulihkan draf:", e);
+                return false;
+            }
+        }
+
+        window.onload = () => {
+            todayStr = getLocalDateString();
+            document.getElementById('inputDate').value = todayStr;
+            document.getElementById('monthFilter').value = todayStr.substring(0, 7);
+
+            const user = localStorage.getItem("loggedInUser");
+            const role = localStorage.getItem("userRole");
+            const fullName = localStorage.getItem("userFullName") || user;
+            const token = localStorage.getItem("sessionToken");
+
+            if (user && token) {
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('pwaInstallContainer').classList.add('hidden');
+                document.getElementById('sessionLoading').classList.remove('hidden');
+
+                const loginTime = localStorage.getItem("loginTime");
+                const now = new Date().getTime();
+                const twelveHoursInMs = 12 * 60 * 60 * 1000;
+
+                if (loginTime && (now - parseInt(loginTime)) > twelveHoursInMs) {
+                    handleAutoLogout("Sesi Anda telah habis (lebih dari 12 jam). Silakan login kembali.");
+                    return;
+                }
+
+                apiCall({ action: "checkSession", username: user, sessionToken: token })
+                .then(res => {
+                    document.getElementById('sessionLoading').classList.add('hidden');
+                    
+                    if (res.status === "valid") {
+                        if (res.role) localStorage.setItem("userRole", res.role);
+                        showApp(fullName, res.role || role);
+                    } else {
+                        let msg = res.reason === "device" ? "Akun ini telah login di perangkat lain." : "Sesi Anda telah habis.";
+                        handleAutoLogout(msg);
+                    }
+                }).catch(e => {
+                    document.getElementById('sessionLoading').classList.add('hidden');
+                    showApp(fullName, role);
+                });
+            } else {
+                document.getElementById('loginSection').classList.remove('hidden');
+            }
+        };
+
+        function showApp(fullName, role) {
+            document.getElementById('appSection').classList.remove('hidden');
+            document.getElementById('pwaInstallContainer').classList.add('hidden');
+            document.getElementById('staffName').innerText = fullName;
+            document.getElementById('salesInput').value = fullName; 
+            
+            if (role === 'Admin' || role === 'Super Admin') {
+                document.getElementById('navAdmin').classList.remove('hidden');
+            }
+
+            // Daftarkan listener untuk auto-save draf
+            const salesForm = document.getElementById('salesForm');
+            if (salesForm) {
+                salesForm.addEventListener('input', saveDraft);
+                salesForm.addEventListener('change', saveDraft);
+            }
+
+            // Pulihkan draf jika halaman ter-refresh
+            let hasDraft = restoreDraft();
+            if (!hasDraft) {
+                initData(todayStr);
+            } else {
+                initData(document.getElementById('inputDate').value);
+            }
+        }
+
+        function alertIOS(title, text, icon="info") {
+            return Swal.fire({ title: title, text: text, icon: icon, confirmButtonText: 'Oke', confirmButtonColor: '#007aff' });
+        }
+
+        function formatRibuan(obj) {
+            let val = obj.value.replace(/[^0-9]/g, '');
+            obj.value = val ? parseInt(val, 10).toLocaleString('id-ID') : "";
+        }
+        
+        function getInt(str) {
+            if(!str) return 0;
+            return parseInt(str.toString().replace(/[^0-9]/g, '')) || 0;
+        }
+
+        function apiCall(payload) {
+            if (!payload.username && localStorage.getItem("loggedInUser")) {
+                payload.username = localStorage.getItem("loggedInUser");
+            }
+            if (!payload.sessionToken && localStorage.getItem("sessionToken")) {
+                payload.sessionToken = localStorage.getItem("sessionToken");
+            }
+
+            return fetch(SCRIPT_URL, {
+                redirect: "follow",
+                method: 'POST',
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify(payload)
+            }).then(res => res.json());
+        }
+
+        function refreshData() {
+            let icon = document.getElementById('refreshIcon');
+            icon.classList.remove('spin');
+            void icon.offsetWidth; 
+            icon.classList.add('spin');
+            
+            let activeTab = document.querySelector('.tab-item.active').id;
+            if (activeTab === 'navForm') {
+                initData(document.getElementById('inputDate').value);
+            } else if (activeTab === 'navHistory') {
+                loadHistory();
+            } else if (activeTab === 'navAdmin') {
+                loadStaffList();
+            }
+            setTimeout(() => { icon.classList.remove('spin'); }, 600);
+        }
+
+        /* --- FUNGSI LOGIN DENGAN NOTIFIKASI POPUP DIPERBAIKI --- */
+        function login() {
+            const u = document.getElementById('loginUser').value.trim();
+            const p = document.getElementById('loginPass').value.trim();
+
+            // Validasi jika kolom username atau password masih kosong
+            if (!u || !p) {
+                alertIOS("Peringatan", "Username dan Password wajib diisi!", "warning");
+                return;
+            }
+
+            document.getElementById('btnLogin').innerText = 'Loading...';
+
+            apiCall({ action: "login", username: u, password: p })
+            .then(data => {
+                if (data && data.status === "success") {
+                    localStorage.setItem("loggedInUser", data.user);
+                    localStorage.setItem("userRole", data.role);
+                    localStorage.setItem("userFullName", data.fullName);
+                    localStorage.setItem("sessionToken", data.sessionToken);
+                    localStorage.setItem("loginTime", new Date().getTime().toString());
+                    location.reload();
+                } else {
+                    // Tampilkan Popup jika password / username salah
+                    let errorMsg = (data && data.message) ? data.message : "Username atau Password salah!";
+                    alertIOS("Gagal Login", errorMsg, "error");
+                    document.getElementById('btnLogin').innerText = 'Masuk';
+                }
+            }).catch(e => { 
+                alertIOS("Error", "Gagal menghubungi server. Periksa koneksi internet Anda.", "error"); 
+                document.getElementById('btnLogin').innerText = 'Masuk'; 
+            });
+        }
+
+        function handleAutoLogout(msg) {
+            clearDraft();
+            localStorage.clear();
+            Swal.fire({ title: 'Sesi Berakhir', text: msg, icon: 'warning', confirmButtonColor: '#007aff', allowOutsideClick: false }).then(() => {
+                location.reload();
+            });
+        }
+
+        function logout(isManual = false) {
+            if (isManual) {
+                Swal.fire({
+                    title: 'Logout', text: "Yakin ingin keluar?", icon: 'warning',
+                    showCancelButton: true, confirmButtonColor: '#ff3b30', cancelButtonColor: '#8e8e93',
+                    confirmButtonText: 'Keluar'
+                }).then((result) => { 
+                    if (result.isConfirmed) { 
+                        clearDraft();
+                        localStorage.clear(); 
+                        location.reload(); 
+                    } 
+                });
+            } else {
+                clearDraft();
+                localStorage.clear(); 
+                location.reload();
+            }
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab' + tabName).classList.remove('hidden');
+            document.getElementById('nav' + tabName).classList.add('active');
+            if (tabName === 'History') loadHistory();
+            if (tabName === 'Admin') loadStaffList();
+        }
+
+        function calcTotalView() {
+            let iv = getInt(document.getElementById('internalView').value);
+            let cv = getInt(document.getElementById('customerView').value);
+            document.getElementById('totalView').value = (iv + cv).toLocaleString('id-ID');
+            saveDraft();
+        }
+
+        function initData(selectedDate) {
+            apiCall({ action: "getInitData", date: selectedDate })
+            .then(data => {
+                currentPajak = parseFloat(data.pajak);
+                document.getElementById('infoPajak').innerText = currentPajak;
+                document.getElementById('infoTarget').innerText = parseFloat(data.target).toLocaleString('id-ID');
+                document.getElementById('setPajak').value = currentPajak;
+                document.getElementById('setTarget').value = parseFloat(data.target).toLocaleString('id-ID');
+            });
+        }
+
+        function checkDate() {
+            let selected = document.getElementById('inputDate').value;
+            resetForm();
+            document.getElementById('inputDate').value = selected;
+            const currentName = localStorage.getItem("userFullName") || localStorage.getItem("loggedInUser");
+            
+            apiCall({ action: "getInitData", date: selected })
+            .then(data => {
+                if (data.existingData) {
+                    let previousOwner = data.existingData[3] || data.existingData[0];
+                    Swal.fire({
+                        title: 'Data Ditemukan', 
+                        text: `Data untuk tanggal ${selected} sudah pernah diinput oleh ${previousOwner}. Apakah ingin memuat (load) data ini untuk diedit?`, 
+                        icon: 'info',
+                        showCancelButton: true, 
+                        confirmButtonText: 'Ya, Muat Data', 
+                        cancelButtonText: 'Batal', 
+                        confirmButtonColor: '#007aff',
+                        cancelButtonColor: '#8e8e93'
+                    }).then((result) => {
+                        if(result.isConfirmed) {
+                            fillFormWithExistingData(data.existingData);
+                            document.getElementById('salesInput').value = currentName;
+                        } else {
+                            document.getElementById('salesInput').value = currentName;
+                            saveDraft();
+                        }
+                    });
+                } else {
+                    document.getElementById('salesInput').value = currentName;
+                    saveDraft();
+                }
+            });
+        }
+
+        function toggleChannel(channel, isRestoring = false) {
+            let chips = document.querySelectorAll('.ios-chip');
+            let chip;
+            chips.forEach(c => { if(c.innerText.includes(channel)) chip = c; });
+
+            if (activeChannels.includes(channel)) {
+                activeChannels = activeChannels.filter(c => c !== channel);
+                if(chip) chip.classList.remove('active');
+                let formEl = document.getElementById('form_' + channel.replace(/[^a-zA-Z]/g, ''));
+                if(formEl) formEl.remove();
+            } else {
+                activeChannels.push(channel);
+                if(chip) chip.classList.add('active');
+                renderChannelForm(channel);
+            }
+
+            if (!isRestoring) {
+                saveDraft();
+            }
+        }
+
+        function renderChannelForm(channel) {
+            let container = document.getElementById('multiChannelForms');
+            let div = document.createElement('div');
+            let safeId = channel.replace(/[^a-zA-Z]/g, ''); 
+            div.className = 'channel-block';
+            div.id = 'form_' + safeId;
+            
+            div.innerHTML = `
+                <div style="font-weight:700; color:var(--ios-blue); margin-bottom:10px;">➔ Data ${channel}</div>
+                <div class="flex-row">
+                    <div class="input-group" style="flex:1; min-width:0;">
+                        <label>Trx</label>
+                        <input type="text" inputmode="numeric" id="trx_${safeId}" class="ios-input" oninput="formatRibuan(this)" required>
+                    </div>
+                    <div class="input-group" style="flex:1; min-width:0;">
+                        <label>Sales</label>
+                        <input type="text" inputmode="numeric" id="sales_${safeId}" class="ios-input" oninput="formatRibuan(this); calcNetSales('${safeId}')" required>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Net Sales (Auto - Pajak)</label>
+                    <input type="text" id="net_${safeId}" class="ios-input" readonly>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function calcNetSales(safeId) {
+            let sales = getInt(document.getElementById(`sales_${safeId}`).value);
+            let net = sales / (1 + (currentPajak / 100));
+            document.getElementById(`net_${safeId}`).value = Math.round(net).toLocaleString('id-ID');
+            saveDraft();
+        }
+
+        function submitData(e) {
+            e.preventDefault();
+            
+            let iv = document.getElementById('internalView').value;
+            let cv = document.getElementById('customerView').value;
+            let tc = document.getElementById('totalChats').value;
+            if(iv === "" || cv === "" || tc === "") {
+                alertIOS("Perhatian", "Internal View, Customer View, dan Total Chats WAJIB diisi!", "warning");
+                return;
+            }
+            if(activeChannels.length === 0) { 
+                alertIOS("Perhatian", "Pilih minimal 1 channel!", "warning"); 
+                return; 
+            }
+            
+            executeSubmit(false);
+        }
+
+        function executeSubmit(confirmReplace) {
+            let btn = document.getElementById('btnSubmit');
+            let originalText = btn.innerText;
+            btn.innerText = "Memproses..."; btn.disabled = true;
+
+            let channelData = {};
+            activeChannels.forEach(ch => {
+                let safeId = ch.replace(/[^a-zA-Z]/g, '');
+                channelData[ch] = {
+                    trx: getInt(document.getElementById(`trx_${safeId}`).value),
+                    sales: getInt(document.getElementById(`sales_${safeId}`).value),
+                    netSales: getInt(document.getElementById(`net_${safeId}`).value)
+                };
+            });
+
+            let payload = {
+                action: "submit",
+                username: localStorage.getItem("loggedInUser"),
+                fullName: localStorage.getItem("userFullName") || localStorage.getItem("loggedInUser"),
+                date: document.getElementById('inputDate').value,
+                internalView: getInt(document.getElementById('internalView').value),
+                customerView: getInt(document.getElementById('customerView').value),
+                totalView: getInt(document.getElementById('totalView').value),
+                totalChats: getInt(document.getElementById('totalChats').value),
+                channels: channelData,
+                confirmReplace: confirmReplace
+            };
+
+            apiCall(payload).then(data => {
+                if(data.status === "exists") {
+                    Swal.fire({
+                        title: 'Data Tanggal Tersebut Sudah Ada!', 
+                        text: `Data tanggal ini sudah pernah diinput (terakhir oleh ${data.prevOwner}). Apakah kamu yakin ingin mengganti (replace) seluruh data di tanggal tersebut? (Data lama otomatis diamankan di Sheet Backup)`, 
+                        icon: 'warning',
+                        showCancelButton: true, 
+                        confirmButtonText: 'Ya, Replace (Ganti)', 
+                        cancelButtonText: 'Batal', 
+                        confirmButtonColor: '#ff9500',
+                        cancelButtonColor: '#8e8e93'
+                    }).then((result) => {
+                        if(result.isConfirmed) {
+                            executeSubmit(true);
+                        } else {
+                            btn.innerText = originalText; btn.disabled = false;
+                        }
+                    });
+                } else if (data.status === "success") {
+                    alertIOS("Sukses", data.message, "success");
+                    clearDraft(); // Hapus draf setelah data berhasil disimpan
+                    todayStr = getLocalDateString();
+                    resetForm();
+                    document.getElementById('inputDate').value = todayStr;
+                } else {
+                    alertIOS("Error", data.message || "Terjadi Kesalahan", "error");
+                    btn.innerText = originalText; btn.disabled = false;
+                }
+            }).catch(() => { 
+                alertIOS("Error", "Gagal menghubungi server", "error"); 
+                btn.innerText = originalText; btn.disabled = false; 
+            });
+        }
+
+        function loadHistory() {
+            let container = document.getElementById('historyList');
+            container.innerHTML = "<div style='padding:20px;text-align:center;'>Memuat data...</div>";
+            
+            let filterMonth = document.getElementById('monthFilter').value; 
+            
+            apiCall({ action: "getHistory", month: filterMonth })
+            .then(data => {
+                if(!data.data || data.data.length === 0) {
+                    container.innerHTML = "<div style='padding:20px;text-align:center;color:gray;'>Belum ada riwayat pada bulan ini.</div>"; return;
+                }
+                
+                let html = "";
+                data.data.forEach(row => {
+                    let dDate = row[1];
+                    let ownerName = row[3] || row[0]; 
+                    let dDaily = parseFloat(row[33] || 0).toLocaleString('id-ID');
+                    let htmlData = JSON.stringify(row).replace(/"/g, '&quot;');
+                    
+                    html += `
+                        <div class="history-item" onclick="viewHistory('${htmlData}')">
+                            <div>
+                                <div class="h-date">${new Date(dDate).toLocaleDateString('id-ID', {weekday: 'long', day: 'numeric', month: 'long'})}</div>
+                                <div class="h-sub">Net Sales: Rp ${parseFloat(row[34] || 0).toLocaleString('id-ID')} | Total Sales: Rp ${dDaily}</div>
+                                <div class="h-sub" style="color:var(--ios-blue); font-weight:600; font-size:11px;">Oleh: ${ownerName}</div>
+                            </div>
+                            <i class="bi bi-chevron-right" style="color:var(--ios-gray)"></i>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            });
+        }
+
+        function viewHistory(rowDataStr) {
+            let rowData = JSON.parse(rowDataStr);
+            let dateStr = rowData[1];
+            let dtInfo = rowData[2]; 
+            let editorName = rowData[3] || rowData[0];
+            
+            let htmlContent = `<div class="info-detail">`;
+            htmlContent += `<div style="background:#f2f2f7; padding:12px; border-radius:10px; margin-bottom:15px; font-size:13px; text-align:center;">`;
+            htmlContent += `<b>Waktu Update:</b><br>${dtInfo}<br><br>`;
+            htmlContent += `<b>Terakhir Diupdate Oleh:</b><br><span style="color:var(--ios-blue); font-weight:bold; font-size:15px;">${editorName}</span></div>`;
+            
+            htmlContent += `<b>Internal View:</b> ${(rowData[4]||0).toLocaleString('id-ID')}<br>`;
+            htmlContent += `<b>Customer View:</b> ${(rowData[5]||0).toLocaleString('id-ID')}<br>`;
+            htmlContent += `<b>Total View:</b> ${(rowData[6]||0).toLocaleString('id-ID')}<br>`;
+            htmlContent += `<b>Total Chats:</b> ${(rowData[7]||0).toLocaleString('id-ID')}<hr style="margin:10px 0;">`;
+            
+            let cMap = { "TAB": 8, "Rupa-Rupa (ODI)": 11, "Shopee (ODIS)": 14, "Storemode (ODIR)": 17, "Tokopedia (ODIT)": 20, "TikTok (ODIK)": 23, "Grab Mart (GM)": 26, "Project": 29 };
+            
+            let totalTrx = 0; // Menampung jumlah semua transaksi
+
+            for (let ch in cMap) {
+                let idx = cMap[ch];
+                let chTrx = rowData[idx] || 0;
+                let chSales = rowData[idx+1] || 0;
+
+                totalTrx += chTrx; // Tambahkan trx tiap channel ke total
+
+                if (chTrx > 0 || chSales > 0) {
+                    htmlContent += `<b>➤ ${ch}</b><br>Trx: ${chTrx.toLocaleString('id-ID')} | Sales: Rp ${chSales.toLocaleString('id-ID')}<br><br>`;
+                }
+            }
+            
+            // Tampilan Kalkulasi Total di bagian bawah
+            htmlContent += `<hr style="margin:10px 0;">`;
+            htmlContent += `<b>Total Trx:</b> ${totalTrx.toLocaleString('id-ID')}<br>`;
+            htmlContent += `<b>Daily Sales:</b> Rp ${(rowData[33]||0).toLocaleString('id-ID')}<br>`;
+            htmlContent += `<b>Daily Net Sales:</b> Rp ${(rowData[34]||0).toLocaleString('id-ID')}`;
+            htmlContent += `</div>`;
+
+            Swal.fire({
+                title: `Detail Data (${dateStr})`,
+                html: htmlContent,
+                showCancelButton: true,
+                showDenyButton: true,
+                confirmButtonText: 'Edit',
+                denyButtonText: 'Hapus',
+                cancelButtonText: 'Tutup',
+                confirmButtonColor: '#007aff',
+                denyButtonColor: '#ff3b30',
+                cancelButtonColor: '#8e8e93'
+            }).then((res) => {
+                if (res.isConfirmed) {
+                    fillFormWithExistingData(rowData);
+                    document.getElementById('salesInput').value = localStorage.getItem("userFullName") || localStorage.getItem("loggedInUser"); 
+                    switchTab('Form');
+                } else if (res.isDenied) {
+                    Swal.fire({
+                        title: 'Yakin Hapus Data?',
+                        text: "Data akan dihapus dari Database Utama (dan otomatis diamankan ke Sheet Backup)!",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, Hapus!',
+                        confirmButtonColor: '#ff3b30'
+                    }).then((delRes) => {
+                        if(delRes.isConfirmed) {
+                            apiCall({ 
+                                action: "delete", 
+                                fullName: localStorage.getItem("userFullName") || localStorage.getItem("loggedInUser"),
+                                date: dateStr 
+                            }).then(d => {
+                                if (d.status === "success") {
+                                    alertIOS("Terhapus", d.message, "success");
+                                    loadHistory();
+                                    if(document.getElementById('inputDate').value === dateStr) { 
+                                        handleReset(true); // reset silently if deleting the same date
+                                    }
+                                } else {
+                                    alertIOS("Gagal", d.message, "error");
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
+        function fillFormWithExistingData(rowData) {
+            let savedDate = rowData[1] || document.getElementById('inputDate').value;
+            resetForm();
+            
+            isEditMode = true;
+            let btnReset = document.getElementById('btnResetData');
+            if(btnReset) {
+                btnReset.innerText = "Batal Edit";
+                btnReset.style.background = "#ff3b30";
+            }
+            document.getElementById('btnSubmit').innerText = "Simpan Perubahan";
+
+            // Set tanggal dan KUNCI input tanggal agar tidak dapat diedit saat mode edit
+            let inputDateEl = document.getElementById('inputDate');
+            inputDateEl.value = savedDate;
+            inputDateEl.disabled = true;
+
+            document.getElementById('internalView').value = (rowData[4]||0) > 0 ? (rowData[4]||0).toLocaleString('id-ID') : "";
+            document.getElementById('customerView').value = (rowData[5]||0) > 0 ? (rowData[5]||0).toLocaleString('id-ID') : "";
+            document.getElementById('totalView').value = (rowData[6]||0) > 0 ? (rowData[6]||0).toLocaleString('id-ID') : "";
+            document.getElementById('totalChats').value = (rowData[7]||0) > 0 ? (rowData[7]||0).toLocaleString('id-ID') : "";
+            
+            let cMap = { "TAB": 8, "Rupa-Rupa (ODI)": 11, "Shopee (ODIS)": 14, "Storemode (ODIR)": 17, "Tokopedia (ODIT)": 20, "TikTok (ODIK)": 23, "Grab Mart (GM)": 26, "Project": 29 };
+            
+            for (let ch in cMap) {
+                let idx = cMap[ch];
+                if (rowData[idx] > 0 || rowData[idx+1] > 0) { 
+                    toggleChannel(ch, true); 
+                    let safeId = ch.replace(/[^a-zA-Z]/g, '');
+                    document.getElementById(`trx_${safeId}`).value = (rowData[idx]||0).toLocaleString('id-ID');
+                    document.getElementById(`sales_${safeId}`).value = (rowData[idx+1]||0).toLocaleString('id-ID');
+                    document.getElementById(`net_${safeId}`).value = (rowData[idx+2]||0).toLocaleString('id-ID');
+                }
+            }
+
+            saveDraft();
+        }
+
+        // Fungsi gabungan Batal Edit & Reset Form
+        function handleReset(silent = false) {
+            if (silent) {
+                executeReset();
+                return;
+            }
+
+            let titleStr = isEditMode ? 'Batal Edit Data?' : 'Kosongkan Form?';
+            let textStr = isEditMode ? 'Kembali ke form input data baru?' : 'Semua data yang sudah Anda ketik akan dihapus.';
+            
+            Swal.fire({
+                title: titleStr,
+                text: textStr,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Ya',
+                cancelButtonText: 'Tidak',
+                confirmButtonColor: '#ff3b30',
+                cancelButtonColor: '#8e8e93'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    executeReset();
+                }
+            });
+        }
+
+        function executeReset() {
+            clearDraft();
+            resetForm();
+            todayStr = getLocalDateString();
+            document.getElementById('inputDate').value = todayStr;
+            document.getElementById('salesInput').value = localStorage.getItem("userFullName") || localStorage.getItem("loggedInUser");
+        }
+
+        function resetForm() {
+            activeChannels = [];
+            document.getElementById('channelChips').querySelectorAll('.ios-chip').forEach(c => c.classList.remove('active'));
+            document.getElementById('multiChannelForms').innerHTML = "";
+            document.getElementById('internalView').value = "";
+            document.getElementById('customerView').value = "";
+            document.getElementById('totalView').value = "";
+            document.getElementById('totalChats').value = "";
+            document.getElementById('salesInput').value = localStorage.getItem("userFullName") || localStorage.getItem("loggedInUser");
+            
+            // Buka kunci input tanggal kembali
+            let inputDateEl = document.getElementById('inputDate');
+            inputDateEl.disabled = false;
+
+            isEditMode = false;
+            let btnReset = document.getElementById('btnResetData');
+            if(btnReset) {
+                btnReset.innerText = "Kosongkan Form";
+                btnReset.style.background = "#ff3b30";
+            }
+            
+            document.getElementById('btnSubmit').innerText = "Simpan & Kalkulasi";
+            document.getElementById('btnSubmit').disabled = false;
+        }
+
+        function saveAdmin() {
+            let btn = document.getElementById('btnSaveAdmin'); btn.innerText = "Menyimpan...";
+            let p = document.getElementById('setPajak').value;
+            let t = getInt(document.getElementById('setTarget').value);
+            apiCall({ action: "updateSettings", pajak: p, target: t })
+            .then(data => { alertIOS("Sukses", data.message, "success"); initData(todayStr); btn.innerText = "Simpan Pengaturan"; });
+        }
+
+        function loadStaffList() {
+            const container = document.getElementById('staffListContainer');
+            if (!container) return;
+            container.innerHTML = "<div style='text-align:center; padding:15px; color:gray;'>Memuat daftar pengguna...</div>";
+
+            apiCall({ action: "getUsers" })
+            .then(data => {
+                if (data.status === "success") {
+                    if (data.users.length === 0) {
+                        container.innerHTML = "<div style='text-align:center; padding:15px; color:gray;'>Belum ada pengguna.</div>";
+                        return;
+                    }
+                    let html = "";
+                    data.users.forEach(u => {
+                        let statusBadge = (u.status === "Active" || u.status === "Aktif")
+                            ? `<span style="background:#34c759; color:white; padding:3px 8px; border-radius:10px; font-size:11px; font-weight:600;">Aktif</span>`
+                            : `<span style="background:#ff3b30; color:white; padding:3px 8px; border-radius:10px; font-size:11px; font-weight:600;">Nonaktif</span>`;
+                        
+                        let roleBadge = "";
+                        if (u.role === "Super Admin") {
+                            roleBadge = `<span style="background:#af52de; color:white; padding:3px 8px; border-radius:10px; font-size:11px; font-weight:600;">Super Admin</span>`;
+                        } else if (u.role === "Admin") {
+                            roleBadge = `<span style="background:#ff9500; color:white; padding:3px 8px; border-radius:10px; font-size:11px; font-weight:600;">Admin</span>`;
+                        } else {
+                            roleBadge = `<span style="background:#007aff; color:white; padding:3px 8px; border-radius:10px; font-size:11px; font-weight:600;">Staff</span>`;
+                        }
+
+                        let passDisplay = u.password === "******" ? `<span style="color:#8e8e93; font-style:italic;">****** (Dilindungi)</span>` : `<code>${u.password}</code>`;
+
+                        html += `
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #e5e5ea;">
+                                <div>
+                                    <div style="font-weight:700; font-size:15px;">${u.fullName || u.username} ${roleBadge} ${statusBadge}</div>
+                                    <div style="font-size:12px; color:var(--ios-gray); margin-top:3px;">User: <b>${u.username}</b> | Pass: ${passDisplay}</div>
+                                </div>
+                                <button onclick="showEditStaffModal('${u.username}', '${u.fullName || ''}', '${u.role}', '${u.status}', '${u.password}')" class="ios-btn" style="width:auto; padding:6px 12px; font-size:12px; background:#e5e5ea; color:#007aff;">Kelola</button>
+                            </div>
+                        `;
+                    });
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = `<div style='text-align:center; padding:15px; color:red;'>${data.message || 'Gagal memuat daftar pengguna.'}</div>`;
+                }
+            }).catch(() => {
+                container.innerHTML = "<div style='text-align:center; padding:15px; color:red;'>Gagal terhubung ke server.</div>";
+            });
+        }
+
+        function showAddStaffModal() {
+            const myRole = localStorage.getItem("userRole");
+            let roleOptions = `<option value="Staff">Staff (Hanya Input Data)</option>`;
+            if (myRole === "Super Admin") {
+                roleOptions += `<option value="Admin">Admin (Akses Pengaturan & Staff)</option>`;
+                roleOptions += `<option value="Super Admin">Super Admin (Akses Penuh Seluruh Password)</option>`;
+            }
+
+            Swal.fire({
+                title: 'Tambah Pengguna Baru',
+                html: `
+                    <div style="padding-top: 10px;">
+                        <label class="swal-label">Nama Lengkap</label>
+                        <input id="swalNewFullName" class="swal-custom-input" placeholder="Contoh: Budi Santoso">
+                        
+                        <label class="swal-label">Username Login</label>
+                        <input id="swalNewUser" class="swal-custom-input" placeholder="Masukkan Username (tanpa spasi)">
+                        
+                        <label class="swal-label">Password Login</label>
+                        <input id="swalNewPass" type="text" class="swal-custom-input" placeholder="Masukkan Password">
+                        
+                        <label class="swal-label">Role Akses</label>
+                        <select id="swalNewRole" class="swal-custom-input">
+                            ${roleOptions}
+                        </select>
+                    </div>
+                `,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: 'Simpan User',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#007aff',
+                cancelButtonColor: '#8e8e93',
+                preConfirm: () => {
+                    const fn = document.getElementById('swalNewFullName').value.trim();
+                    const u = document.getElementById('swalNewUser').value.trim();
+                    const p = document.getElementById('swalNewPass').value.trim();
+                    const r = document.getElementById('swalNewRole').value;
+                    
+                    if (!fn || !u || !p) {
+                        Swal.showValidationMessage('Nama Lengkap, Username, dan Password wajib diisi!');
+                        return false;
+                    }
+                    if (u.indexOf(' ') >= 0) {
+                        Swal.showValidationMessage('Username tidak boleh menggunakan spasi!');
+                        return false;
+                    }
+                    return { newFullName: fn, newUsername: u, newPassword: p, newRole: r };
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    apiCall({
+                        action: "addStaff",
+                        newFullName: result.value.newFullName,
+                        newUsername: result.value.newUsername,
+                        newPassword: result.value.newPassword,
+                        newRole: result.value.newRole
+                    }).then(data => {
+                        if (data.status === "success") {
+                            alertIOS("Sukses", data.message, "success");
+                            loadStaffList();
+                        } else {
+                            alertIOS("Gagal", data.message, "error");
+                        }
+                    });
+                }
+            });
+        }
+
+        function showEditStaffModal(targetUser, currentFullName, currentRole, currentStatus, currentPass) {
+            const myRole = localStorage.getItem("userRole");
+            let passVal = currentPass === "******" ? "" : currentPass;
+            let passPlaceholder = currentPass === "******" ? "Password Dilindungi (Kosongkan jika tidak diubah)" : "Password Baru";
+
+            let roleSelectHtml = "";
+            if (myRole === "Super Admin") {
+                roleSelectHtml = `
+                    <select id="swalEditRole" class="swal-custom-input">
+                        <option value="Staff" ${currentRole === 'Staff' ? 'selected' : ''}>Staff</option>
+                        <option value="Admin" ${currentRole === 'Admin' ? 'selected' : ''}>Admin</option>
+                        <option value="Super Admin" ${currentRole === 'Super Admin' ? 'selected' : ''}>Super Admin</option>
+                    </select>
+                `;
+            } else {
+                roleSelectHtml = `
+                    <select id="swalEditRole" class="swal-custom-input" disabled>
+                        <option value="${currentRole}" selected>${currentRole}</option>
+                    </select>
+                `;
+            }
+
+            Swal.fire({
+                title: `Edit Akun: ${targetUser}`,
+                html: `
+                    <div style="padding-top: 10px;">
+                        <label class="swal-label">Nama Lengkap</label>
+                        <input id="swalEditFullName" type="text" class="swal-custom-input" value="${currentFullName}" placeholder="Nama Lengkap User">
+                        
+                        <label class="swal-label">Ubah Password</label>
+                        <input id="swalEditPass" type="text" class="swal-custom-input" value="${passVal}" placeholder="${passPlaceholder}">
+                        
+                        <label class="swal-label">Role Akses</label>
+                        ${roleSelectHtml}
+                        
+                        <label class="swal-label">Status Akun</label>
+                        <select id="swalEditStatus" class="swal-custom-input">
+                            <option value="Active" ${(currentStatus === 'Active' || currentStatus === 'Aktif') ? 'selected' : ''}>Aktif (Bisa Login)</option>
+                            <option value="Inactive" ${(currentStatus === 'Inactive' || currentStatus === 'Nonaktif') ? 'selected' : ''}>Nonaktif (Blokir)</option>
+                        </select>
+                    </div>
+                `,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: 'Simpan Perubahan',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#007aff',
+                cancelButtonColor: '#8e8e93',
+                preConfirm: () => {
+                    return {
+                        newFullName: document.getElementById('swalEditFullName').value.trim(),
+                        newPassword: document.getElementById('swalEditPass').value.trim(),
+                        newRole: document.getElementById('swalEditRole').value,
+                        newStatus: document.getElementById('swalEditStatus').value
+                    };
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    apiCall({
+                        action: "updateStaff",
+                        targetUser: targetUser,
+                        newFullName: result.value.newFullName,
+                        newPassword: result.value.newPassword,
+                        newRole: result.value.newRole,
+                        newStatus: result.value.newStatus
+                    }).then(data => {
+                        if (data.status === "success") {
+                            alertIOS("Sukses", data.message, "success");
+                            
+                            if(targetUser === localStorage.getItem("loggedInUser") && result.value.newFullName) {
+                                localStorage.setItem("userFullName", result.value.newFullName);
+                                document.getElementById('staffName').innerText = result.value.newFullName;
+                                document.getElementById('salesInput').value = result.value.newFullName;
+                            }
+                            
+                            loadStaffList();
+                        } else {
+                            alertIOS("Gagal", data.message, "error");
+                        }
+                    });
+                }
+            });
+        }
+
+        // --- PWA SERVICE WORKER REGISTRATION & INSTALL PROMPT ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                .then(registration => {
+                    console.log('ServiceWorker berhasil diregistrasi dengan scope:', registration.scope);
+                })
+                .catch(error => {
+                    console.log('Registrasi ServiceWorker gagal:', error);
+                });
+            });
+        }
+
+        // Penanganan Event Instalasi PWA
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const installBox = document.getElementById('pwaInstallContainer');
+            if (installBox && !localStorage.getItem("loggedInUser")) {
+                installBox.classList.remove('hidden');
+            }
+        });
+
+        function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User menyetujui instalasi PWA');
+                    }
+                    deferredPrompt = null;
+                    document.getElementById('pwaInstallContainer').classList.add('hidden');
+                });
+            } else {
+                alertIOS("Informasi", "Aplikasi ini sudah terinstal atau browser Anda dapat menambahkannya secara manual melalui menu 'Tambah ke Layar Utama' (Add to Home Screen).", "info");
+            }
+        }
+
+        window.addEventListener('appinstalled', () => {
+            const installBox = document.getElementById('pwaInstallContainer');
+            if (installBox) installBox.classList.add('hidden');
+            deferredPrompt = null;
+        });
+    </script>
+</body>
+</html>
